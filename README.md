@@ -17,7 +17,7 @@ Generate beautiful, always-up-to-date SVG cards that showcase any public HackerR
 
 ---
 
-## Tech Stack
+## 🧰 Tech Stack
 
 | Layer        | Tools & Libraries                                                                                                                    | Notes                                                                      |
 | ------------ | ------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------- |
@@ -167,3 +167,17 @@ This spins up both the Vite client and the serverless function emulation.
 ---
 
 Happy coding! If you build something cool with the HackerRank Stats Card, feel free to open an issue or PR. 🚀
+
+## 👨‍💻 Author & Credits
+
+**Built and maintained by  
+[💚 Shaon Majumder](https://shaonresume.netlify.app)**  
+Senior Software Engineer — AI & Scalability
+
+### 🔗 Professional Links
+
+- **Portfolio:** https://shaonresume.netlify.app
+- **GitHub:** https://github.com/ShaonMajumder
+- **LinkedIn:** https://www.linkedin.com/in/shaonmajumder
+- **Medium Author Page:** https://medium.com/@shaonmajumder
+- **Resume (Google Doc):** https://docs.google.com/document/d/1frKGGkaE1nG9G8mTkxUoPfcU0jppSZYOy4VMPTlIb-Y/edit?tab=t.0
