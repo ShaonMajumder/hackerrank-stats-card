@@ -127,6 +127,15 @@ async function fetchCertificates(username) {
   }
 }
 
+// Map stars → tier (gold / silver / bronze)
+function getBadgeTier(stars) {
+  const s = typeof stars === "number" ? stars : 0;
+  if (s >= 5) return "gold";
+  if (s >= 3) return "silver";
+  if (s >= 1) return "bronze";
+  return null;
+}
+
 function generateSVG(profileData, badges, certificates, solved) {
   const model = profileData?.model ?? { username: "Unknown", country: "Unknown", level: 0 };
   const username = model.username ?? "Unknown";
@@ -136,14 +145,18 @@ function generateSVG(profileData, badges, certificates, solved) {
   const normalizedBadges = Array.isArray(badges) ? badges : [];
   const normalizedCerts = Array.isArray(certificates) ? certificates : [];
 
-  const goldBadges = normalizedBadges.filter((b) => b.level === "gold");
-  const silverBadges = normalizedBadges.filter((b) => b.level === "silver");
-  const bronzeBadges = normalizedBadges.filter((b) => b.level === "bronze");
+  const goldBadges = normalizedBadges.filter((b) => getBadgeTier(b.stars) === "gold");
+  const silverBadges = normalizedBadges.filter((b) => getBadgeTier(b.stars) === "silver");
+  const bronzeBadges = normalizedBadges.filter((b) => getBadgeTier(b.stars) === "bronze");
 
   const totalBadges = normalizedBadges.length;
   const totalCertificates = normalizedCerts.length;
 
-  const topBadges = [...goldBadges.slice(0, 3), ...silverBadges.slice(0, 2)].slice(0, 5);
+  // Sort badges by stars desc and show top 5
+  const topBadges = [...normalizedBadges]
+    .sort((a, b) => (b.stars ?? 0) - (a.stars ?? 0))
+    .slice(0, 5);
+
   const topCerts = normalizedCerts; // all passed certs
 
   const baseHeight = 280;
@@ -250,18 +263,33 @@ function generateSVG(profileData, badges, certificates, solved) {
           .map((badge, i) => {
             const col = i % 2;
             const row = Math.floor(i / 2);
+
             const rawBadgeName =
-              typeof badge?.name === "string" && badge.name.trim().length > 0
-                ? badge.name
-                : "Badge";
+              (typeof badge?.badge_name === "string" && badge.badge_name.trim().length > 0
+                ? badge.badge_name
+                : typeof badge?.badge_type === "string" && badge.badge_type.trim().length > 0
+                ? badge.badge_type
+                : "Badge");
+
+            const starsSuffix =
+              typeof badge?.stars === "number" && badge.stars > 0
+                ? ` (${badge.stars}★)`
+                : "";
+
+            const fullName = `${rawBadgeName}${starsSuffix}`;
             const badgeName =
-              rawBadgeName.length > 22 ? rawBadgeName.substring(0, 22) + "..." : rawBadgeName;
+              fullName.length > 28 ? fullName.substring(0, 28) + "..." : fullName;
+
+            const tier = getBadgeTier(badge.stars);
             const color =
-              badge?.level === "gold"
+              tier === "gold"
                 ? "#FFD700"
-                : badge?.level === "silver"
+                : tier === "silver"
                 ? "#C0C0C0"
-                : "#CD7F32";
+                : tier === "bronze"
+                ? "#CD7F32"
+                : "#8b949e";
+
             return `
           <g transform="translate(${col * 250}, ${row * 20 + 15})">
             <circle cx="5" cy="-3" r="4" fill="${color}"/>
