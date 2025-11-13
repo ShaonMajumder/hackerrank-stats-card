@@ -42,7 +42,10 @@ app.get("/api/hackerrank-card", async (req, res) => {
   try {
     console.log(`Fetching HackerRank stats for ${username}`);
     const profile = await fetchProfile(username);
-    const [badges, certificates] = await Promise.all([fetchBadges(username), fetchCertificates(username)]);
+    const [badges, certificates] = await Promise.all([
+      fetchBadges(username),
+      fetchCertificates(username),
+    ]);
     const svg = generateSVG(profile, badges, certificates, solved);
 
     res.setHeader("Content-Type", "image/svg+xml");
@@ -64,9 +67,13 @@ app.get("/", (_, res) => {
   });
 });
 
+// ---------- helpers ----------
+
 async function fetchProfile(username) {
   const response = await fetch(
-    `https://www.hackerrank.com/rest/contests/master/hackers/${encodeURIComponent(username)}/profile`,
+    `https://www.hackerrank.com/rest/contests/master/hackers/${encodeURIComponent(
+      username,
+    )}/profile`,
     { headers: { "User-Agent": USER_AGENT } },
   );
 
@@ -99,7 +106,9 @@ async function fetchBadges(username) {
 async function fetchCertificates(username) {
   try {
     const response = await fetch(
-      `https://www.hackerrank.com/community/v1/test_results/hacker_certificate?username=${encodeURIComponent(username)}`,
+      `https://www.hackerrank.com/community/v1/test_results/hacker_certificate?username=${encodeURIComponent(
+        username,
+      )}`,
       { headers: { "User-Agent": USER_AGENT } },
     );
 
@@ -110,6 +119,7 @@ async function fetchCertificates(username) {
     const data = await response.json();
     const all = Array.isArray(data.data) ? data.data : [];
 
+    // Only keep test_passed
     return all.filter((entry) => entry.attributes?.status === "test_passed");
   } catch (error) {
     console.warn("Certificate fetch failed:", error);
@@ -134,15 +144,17 @@ function generateSVG(profileData, badges, certificates, solved) {
   const totalCertificates = normalizedCerts.length;
 
   const topBadges = [...goldBadges.slice(0, 3), ...silverBadges.slice(0, 2)].slice(0, 5);
-  const topCerts = normalizedCerts;
+  const topCerts = normalizedCerts; // all passed certs
 
   const baseHeight = 280;
-  const badgeListHeight = topBadges.length > 0 ? Math.ceil(topBadges.length / 2) * 20 + 10 : 0;
-  const certListHeight = topCerts.length > 0 ? Math.ceil(topCerts.length / 2) * 20 + 10 : 0;
+  const badgeListHeight =
+    topBadges.length > 0 ? Math.ceil(topBadges.length / 2) * 20 + 10 : 0;
+  const certListHeight =
+    topCerts.length > 0 ? Math.ceil(topCerts.length / 2) * 20 + 10 : 0;
   const totalHeight = baseHeight + Math.max(badgeListHeight, certListHeight);
 
   return `
-    <svg width="550" height="${totalHeight}" xmlns="http://www.w3.org/2000/svg">
+    <svg width="550" height="${totalHeight}" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
       <defs>
         <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
           <stop offset="0%" style="stop-color:#0d1117;stop-opacity:1" />
@@ -179,7 +191,9 @@ function generateSVG(profileData, badges, certificates, solved) {
       </g>
       
       <g transform="translate(25, 90)">
-        ${solved !== null ? `
+        ${
+          solved !== null
+            ? `
         <g>
           <rect x="0" y="0" width="120" height="85" rx="8" fill="#161b22" stroke="#30363d" stroke-width="1"/>
           <text x="60" y="25" font-family="'Segoe UI', sans-serif" font-size="11" font-weight="600" fill="#8b949e" text-anchor="middle">
@@ -192,7 +206,9 @@ function generateSVG(profileData, badges, certificates, solved) {
             Problems
           </text>
         </g>
-        ` : ""}
+        `
+            : ""
+        }
         
         <g transform="translate(${solved !== null ? 135 : 0}, 0)">
           <rect x="0" y="0" width="120" height="85" rx="8" fill="#161b22" stroke="#30363d" stroke-width="1"/>
@@ -223,18 +239,30 @@ function generateSVG(profileData, badges, certificates, solved) {
         </g>
       </g>
       
-      ${topBadges.length > 0 ? `
+      ${
+        topBadges.length > 0
+          ? `
       <g transform="translate(25, 195)">
         <text x="0" y="0" font-family="'Segoe UI', sans-serif" font-size="11" font-weight="600" fill="#8b949e">
           TOP BADGES
         </text>
-        ${topBadges.map((badge, i) => {
-          const col = i % 2;
-          const row = Math.floor(i / 2);
-          const rawBadgeName = typeof badge?.name === "string" && badge.name.trim().length > 0 ? badge.name : "Badge";
-          const badgeName = rawBadgeName.length > 22 ? rawBadgeName.substring(0, 22) + "..." : rawBadgeName;
-          const color = badge?.level === "gold" ? "#FFD700" : badge?.level === "silver" ? "#C0C0C0" : "#CD7F32";
-          return `
+        ${topBadges
+          .map((badge, i) => {
+            const col = i % 2;
+            const row = Math.floor(i / 2);
+            const rawBadgeName =
+              typeof badge?.name === "string" && badge.name.trim().length > 0
+                ? badge.name
+                : "Badge";
+            const badgeName =
+              rawBadgeName.length > 22 ? rawBadgeName.substring(0, 22) + "..." : rawBadgeName;
+            const color =
+              badge?.level === "gold"
+                ? "#FFD700"
+                : badge?.level === "silver"
+                ? "#C0C0C0"
+                : "#CD7F32";
+            return `
           <g transform="translate(${col * 250}, ${row * 20 + 15})">
             <circle cx="5" cy="-3" r="4" fill="${color}"/>
             <text x="15" y="0" font-family="'Segoe UI', sans-serif" font-size="10" fill="#c9d1d9">
@@ -242,39 +270,72 @@ function generateSVG(profileData, badges, certificates, solved) {
             </text>
           </g>
           `;
-        }).join("")}
+          })
+          .join("")}
       </g>
-      ` : ""}
+      `
+          : ""
+      }
       
-      ${topCerts.length > 0 ? `
+      ${
+        topCerts.length > 0
+          ? `
       <g transform="translate(25, ${215 + badgeListHeight})">
         <text x="0" y="0" font-family="'Segoe UI', sans-serif" font-size="11" font-weight="600" fill="#8b949e">
           CERTIFICATES
         </text>
-        ${topCerts.map((cert, i) => {
-          const col = i % 2;
-          const row = Math.floor(i / 2);
-          const attr = cert.attributes || {};
-          const meta = attr.certificate || {};
-          const rawName =
-            (Array.isArray(attr.certificates) && attr.certificates[0]) ||
-            (meta.label && meta.level ? `${meta.label} (${meta.level})` : "") ||
-            meta.label ||
-            "Certificate";
-          const certName = rawName.length > 22 ? rawName.substring(0, 22) + "..." : rawName;
-          return `
+        ${topCerts
+          .map((cert, i) => {
+            const col = i % 2;
+            const row = Math.floor(i / 2);
+
+            const attr = cert.attributes || {};
+            const meta = attr.certificate || {};
+
+            const rawName =
+              (Array.isArray(attr.certificates) && attr.certificates[0]) ||
+              (meta.label && meta.level ? `${meta.label} (${meta.level})` : "") ||
+              meta.label ||
+              "Certificate";
+
+            const certName =
+              rawName.length > 28 ? rawName.substring(0, 28) + "..." : rawName;
+
+            // clickable link = certificate_image
+            const imageUrl =
+              typeof attr.certificate_image === "string" && attr.certificate_image.trim().length > 0
+                ? attr.certificate_image.trim()
+                : null;
+
+            const detailUrl = imageUrl; // per your requirement: only certificate_image
+            const safeCertName = escapeXml(certName);
+            const safeDetailUrl = detailUrl ? escapeXml(detailUrl) : "";
+
+            return `
             <g transform="translate(${col * 250}, ${row * 20 + 15})">
-              <text x="0" y="0" font-family="'Segoe UI', sans-serif" font-size="10" fill="#58a6ff">
-                >
+              ${
+                safeDetailUrl
+                  ? `
+              <a xlink:href="${safeDetailUrl}" target="_blank">
+                <text x="0" y="0" font-family="'Segoe UI', sans-serif" font-size="10" fill="#58a6ff">
+                  ${safeCertName} ↗
+                </text>
+              </a>
+              `
+                  : `
+              <text x="0" y="0" font-family="'Segoe UI', sans-serif" font-size="10" fill="#c9d1d9">
+                ${safeCertName}
               </text>
-              <text x="15" y="0" font-family="'Segoe UI', sans-serif" font-size="10" fill="#c9d1d9">
-                ${escapeXml(certName)}
-              </text>
+              `
+              }
             </g>
           `;
-        }).join("")}
+          })
+          .join("")}
       </g>
-      ` : ""}
+      `
+          : ""
+      }
       
       <g transform="translate(0, ${totalHeight - 20})">
         <text x="525" y="0" font-family="'Segoe UI', sans-serif" font-size="10" fill="#00EA64" text-anchor="end" opacity="0.7">
