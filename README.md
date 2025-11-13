@@ -1,52 +1,66 @@
 # HackerRank Stats Card
 
-Generate beautiful, always-up-to-date SVG cards that showcase any public HackerRank profile. The project ships a React/Tailwind front-end for building and sharing cards, plus a tiny Express API (deployed as a Netlify Function) that scrapes the public HackerRank endpoints and returns the rendered SVG.
+Generate beautiful, always-up-to-date SVG cards for any public HackerRank profile. The project combines a polished React/Tailwind UI for building and sharing cards with a lightweight Express API (deployed as a Netlify Function) that hits the public HackerRank endpoints and renders the SVG server-side.
 
-**Live Link**: https://hackerrank-stats-card.netlify.app/
+**Live demo:** https://hackerrank-stats-card.netlify.app/  
 ![HackerRank Stats](https://hackerrank-stats-card.netlify.app/api/hackerrank-card?username=shaonmajumder&solved=89)
 
 ---
 
 ## Features
 
-- **One-click card generation** – Enter a username (and optional solved count) to preview the SVG immediately.
-- **Share-ready embeds** – Prebuilt Markdown, HTML, and direct-link snippets for README.md files, blogs, and dashboards.
-- **Badge & certificate summaries** – Highlights gold/silver/bronze badge counts and all passed certificates pulled from HackerRank.
-- **Responsive UI** – Built with shadcn/ui + Tailwind for a polished experience on desktop or mobile.
-- **Self-hosted API** – Express server runs locally and doubles as a Netlify Function in production, so `/api/hackerrank-card` works on every environment.
+- **Instant SVG preview** - Validate handles, optionally override the solved count, and render the card inline before sharing it anywhere.
+- **Share-ready embeds** - Generate Markdown, HTML, and raw URL snippets with one-click copy (clipboard API with textarea fallback).
+- **Rich HackerRank insights** - The API fetches the profile, badge, and certificate feeds in parallel, sanitizes values, and links certificates to their proof images.
+- **Responsive shadcn/ui surface** - Tailwind + shadcn components deliver a delightful experience on desktop, tablet, and mobile.
+- **Friendly feedback loop** - Toast notifications, inline form guidance, and disabled/loading states keep the workflow foolproof.
+- **Serverless-friendly API** - A single Express app exposes `/api/hackerrank-card`, applies permissive CORS + caching headers, and deploys unchanged as a Netlify Function.
 
 ---
 
-## 🧰 Tech Stack
+## Tech Stack
 
 | Layer        | Tools & Libraries                                                                                                                    | Notes                                                                      |
 | ------------ | ------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------- |
-| Front-end    | [React 18](https://reactjs.org/), [Vite 5](https://vitejs.dev/), [TypeScript](https://www.typescriptlang.org/)                       | Fast dev build, type safety, hooks-based UI.                               |
-| UI / Styling | [Tailwind CSS](https://tailwindcss.com/), [shadcn/ui](https://ui.shadcn.com/), [lucide-react](https://lucide.dev/)                   | Prebuilt components, utility classes, iconography.                         |
-| State / UX   | React hooks, [@tanstack/react-query](https://tanstack.com/query/latest) (ready for future caching), react-router                     | SPA router with `/` page and error boundary.                               |
-| Tooling      | ESLint 9, TypeScript ESLint, SWC React plugin, Concurrent dev server                                                                 | `npm run lint` for static analysis; SWC speeds up HMR.                     |
-| Backend API  | [Express](https://expressjs.com/), `node-fetch` (native), custom SVG generator                                                       | Fetches profile, badges, certificates, then renders SVG server-side.       |
-| Serverless   | [Netlify Functions](https://docs.netlify.com/functions/overview/), [serverless-http](https://github.com/dougmoscrop/serverless-http) | Wraps the Express app for production; `/api/*` redirected to the function. |
-| Deployment   | [Netlify](https://www.netlify.com/)                                                                                                  | Builds Vite front-end, bundles serverless function via `netlify.toml`.     |
+| Front-end    | [React 18](https://reactjs.org/), [Vite 5](https://vitejs.dev/), [TypeScript](https://www.typescriptlang.org/)                       | Fast dev experience, type-safe hooks-based UI.                             |
+| UI / Styling | [Tailwind CSS](https://tailwindcss.com/), [shadcn/ui](https://ui.shadcn.com/), [lucide-react](https://lucide.dev/)                   | Utility-first styling with composable components and icons.                |
+| State / UX   | React state + custom hooks, toast system, React Router                                                                               | Single-page flow with inline validation + toasts.                          |
+| Backend API  | [Express](https://expressjs.com/), native `fetch`, custom SVG generator                                                              | Requests HackerRank profile/badges/certificates and renders SVG server-side. |
+| Tooling      | ESLint 9, TypeScript ESLint, SWC React plugin, Nodemon, Concurrent dev server                                                        | `npm run lint` for static analysis; SWC keeps HMR snappy.                  |
+| Deployment   | [Netlify](https://www.netlify.com/), [Netlify Functions](https://docs.netlify.com/functions/overview/), [serverless-http](https://github.com/dougmoscrop/serverless-http) | Netlify builds the Vite client and mounts the Express app as a function.   |
+
+---
+
+## Architecture Overview
+
+1. **Client** (`src/pages/Index.tsx`)
+   - Collects the username and optional solved count.
+   - Calls `/api/hackerrank-card` (or `VITE_API_BASE_URL + /api/hackerrank-card`) and ensures the SVG is reachable before showing preview/embed snippets.
+   - Provides Markdown/HTML/direct URL strings with one-click copy and toast feedback.
+2. **Server** (`server/app.js`)
+   - Validates query params, applies permissive CORS headers, and caches responses for one hour.
+   - Fetches profile, badge, and certificate endpoints concurrently, normalizes/sanitizes the payload, and renders a dynamic SVG highlighting totals, top badges, and certificates.
+3. **Serverless adapter** (`netlify/functions/hackerrank-card.js`)
+   - Wraps the Express app via `serverless-http` so the same code runs locally (`npm run dev`) and on Netlify (`/.netlify/functions/hackerrank-card`).
 
 ---
 
 ## Project Structure
 
 ```
-.
-├── src/                    # React application
-│   ├── components/         # shadcn/ui building blocks
-│   ├── pages/Index.tsx     # Main UI for generating cards
-│   └── integrations/       # (unused) placeholder for future APIs
-├── server/
-│   ├── app.js              # Express app shared by dev server + Netlify
-│   └── index.js            # Local dev entry (nodemon)
-├── netlify/
-│   └── functions/
-│       └── hackerrank-card.js   # serverless-http wrapper
-├── netlify.toml            # Build + redirect configuration
-└── package.json
+hackerrank-stats-card/
+|-- src/
+|   |-- components/           # shadcn/ui building blocks
+|   `-- pages/Index.tsx      # Main UI for generating cards
+|-- server/
+|   |-- app.js               # Express app shared by dev server + Netlify
+|   `-- index.js             # Local dev entry (nodemon)
+|-- netlify/
+|   `-- functions/
+|       `-- hackerrank-card.js   # serverless-http wrapper
+|-- netlify.toml             # Build + redirect configuration
+|-- package.json
+`-- README.md
 ```
 
 ---
@@ -55,7 +69,7 @@ Generate beautiful, always-up-to-date SVG cards that showcase any public HackerR
 
 ### 1. Prerequisites
 
-- Node.js **18+** (recommended via [nvm](https://github.com/nvm-sh/nvm))
+- Node.js **18+** (use [nvm](https://github.com/nvm-sh/nvm) for convenience)
 - npm **10+**
 
 ### 2. Installation
@@ -74,7 +88,7 @@ Create `.env` (already gitignored):
 VITE_API_BASE_URL=""
 ```
 
-- Leave the value empty to call the API on the same origin (default for local dev + Netlify).
+- Leave empty to call the API on the same origin (default for local dev and Netlify).
 - Set to `https://your-api.example.com` if you deploy the Express server elsewhere.
 
 ### 4. Run locally
@@ -83,7 +97,7 @@ VITE_API_BASE_URL=""
 npm run dev
 ```
 
-This concurrently starts:
+This start script runs both:
 
 - Vite dev server on [http://localhost:8080](http://localhost:8080)
 - Nodemon + Express API on [http://localhost:8787](http://localhost:8787) (proxied via Vite)
@@ -96,88 +110,89 @@ Stop with `Ctrl+C`.
 
 | Command                | Description                                                          |
 | ---------------------- | -------------------------------------------------------------------- |
-| `npm run dev`          | Run Vite (client) + Nodemon (API) together.                          |
+| `npm run dev`          | Run Vite (client) and Nodemon (API) together.                        |
 | `npm run dev:client`   | Vite dev server only.                                                |
 | `npm run dev:server`   | Nodemon watching `server/` for Express-only development.             |
-| `npm run start:server` | Plain Node start of the API (useful for production-like tests).      |
+| `npm run start:server` | Plain Node start of the API (production-like tests).                 |
 | `npm run build`        | Production build for the React app (outputs to `dist/`).             |
 | `npm run preview`      | Preview the built client locally.                                    |
-| `npm run lint`         | Run ESLint (note: a few shadcn-generated files still emit warnings). |
+| `npm run lint`         | Run ESLint (some shadcn-generated files may still warn).             |
 
 ---
 
 ## API Reference
 
-All requests are GET and CORS-enabled. The server returns SVG with `Content-Type: image/svg+xml`.
+All requests are GET and CORS-enabled. Responses are SVG (`Content-Type: image/svg+xml`) unless an error occurs.
 
 ### `GET /api/hackerrank-card`
 
-| Query Param | Type   | Required | Description                              |
-| ----------- | ------ | -------- | ---------------------------------------- |
-| `username`  | string | ✅ Yes   | HackerRank handle to fetch.              |
-| `solved`    | number | ❌ No    | Optional custom solved count to display. |
+| Query param | Type   | Required | Description                                |
+| ----------- | ------ | -------- | ------------------------------------------ |
+| `username`  | string | Yes      | HackerRank handle to fetch.                |
+| `solved`    | number | No       | Optional override for problems-solved sum. |
 
 **Responses**
 
-- `200 OK` – SVG string (set `Cache-Control: public, max-age=3600` for caching).
-- `400 Bad Request` – JSON body `{ error: "Username is required" }` or invalid `solved`.
-- `404 Not Found` – JSON error if the hacker profile is missing.
-- `500 Internal Server Error` – Generic JSON error for unexpected issues.
+- `200 OK` - SVG string (includes `Cache-Control: public, max-age=3600`).
+- `400 Bad Request` - `{ error: "Username is required" }` or invalid `solved`.
+- `404 Not Found` - `{ error: "Profile not found" }` when HackerRank is missing the user.
+- `500 Internal Server Error` - `{ error: "Internal server error" }` for unexpected issues.
 
-Because the Netlify redirect maps `/api/*` to the function, the front-end can simply `fetch("/api/hackerrank-card?...")` in every environment.
+Because `netlify.toml` redirects `/api/*` to `/.netlify/functions/hackerrank-card`, the front-end can simply `fetch("/api/hackerrank-card?...")` both locally and in production. When deploying the API elsewhere, set `VITE_API_BASE_URL` accordingly.
 
 ---
 
 ## Deployment (Netlify)
 
-1. **Connect the repo** in Netlify.
-2. Netlify automatically discovers `netlify.toml`:
-   - Builds the Vite site via `npm run build`.
-   - Publishes the static client from `dist/`.
-   - Bundles serverless functions from `netlify/functions/`.
+1. Connect the repository in Netlify.
+2. Netlify reads `netlify.toml` and automatically:
+   - Runs `npm run build`.
+   - Publishes the client from `dist/`.
+   - Bundles functions from `netlify/functions/`.
 3. `/api/*` routes are redirected to `/.netlify/functions/hackerrank-card`, which runs the Express logic via `serverless-http`.
 
-To test locally with Netlify:
+Local parity:
 
 ```bash
 npm install -g netlify-cli
 netlify dev
 ```
 
-This spins up both the Vite client and the serverless function emulation.
+`netlify dev` spins up both the client and the function emulation so `/api/*` behaves just like production.
 
 ---
 
 ## Conventions & Notes
 
-- **Coding style**: ESLint + TypeScript strict mode. Run `npm run lint` before committing.
-- **SVG generator**: Keep `server/app.js` as the single source of truth—reuse helpers when adding new endpoints.
-- **Rate limiting**: HackerRank public endpoints are unauthenticated, so consider adding caching or rate protection if you expect heavy traffic.
-- **Testing**: No automated tests yet; manual testing via browsers and direct `curl` calls is recommended before deploys.
+- **Coding style:** ESLint + strict TypeScript. Run `npm run lint` before committing.
+- **Single SVG source:** Keep `server/app.js` as the canonical SVG generator; reuse helpers for new endpoints.
+- **Rate limiting:** HackerRank endpoints are unauthenticated. Add caching or rate protection if you expect heavy traffic.
+- **Testing:** There are no automated tests yet; rely on manual browser checks and direct `curl` calls until tests are added.
 
 ---
 
 ## Roadmap Ideas
 
-- Add automated screenshots of the SVG for social cards.
-- Persist cached responses in Redis/Upstash to reduce HackerRank requests.
-- Expand the front-end with multi-theme previews and Live Playground.
-- Provide CLI/REST endpoints for bulk generation.
+- Automated screenshots of the SVG for social sharing.
+- Caching layer (Redis/Upstash) to shrink HackerRank load and speed up responses.
+- Additional card layouts/themes and a live playground for customization.
+- CLI or REST batch generation for multiple users.
 
 ---
 
-Happy coding! If you build something cool with the HackerRank Stats Card, feel free to open an issue or PR. 🚀
+## Author & Credits
 
-## 👨‍💻 Author & Credits
+**Built and maintained by [Shaon Majumder](https://shaonresume.netlify.app)**  
+Senior Software Engineer - AI & Scalability
 
-**Built and maintained by  
-[💚 Shaon Majumder](https://shaonresume.netlify.app)**  
-Senior Software Engineer — AI & Scalability
+**Connect**
 
-### 🔗 Professional Links
+- Portfolio: https://shaonresume.netlify.app
+- GitHub: https://github.com/ShaonMajumder
+- LinkedIn: https://www.linkedin.com/in/shaonmajumder
+- Medium: https://medium.com/@shaonmajumder
+- Resume: https://docs.google.com/document/d/1frKGGkaE1nG9G8mTkxUoPfcU0jppSZYOy4VMPTlIb-Y/edit?tab=t.0
 
-- **Portfolio:** https://shaonresume.netlify.app
-- **GitHub:** https://github.com/ShaonMajumder
-- **LinkedIn:** https://www.linkedin.com/in/shaonmajumder
-- **Medium Author Page:** https://medium.com/@shaonmajumder
-- **Resume (Google Doc):** https://docs.google.com/document/d/1frKGGkaE1nG9G8mTkxUoPfcU0jppSZYOy4VMPTlIb-Y/edit?tab=t.0
+---
+
+Happy coding! Feel free to open an issue or PR if you build something cool with the HackerRank Stats Card.
